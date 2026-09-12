@@ -5,6 +5,7 @@ import {
   Box,
   FolderOpen,
   Layers,
+  LogOut,
   Maximize2,
   MoreHorizontal,
   Orbit,
@@ -201,6 +202,18 @@ export function EditHeader({
         >
           <FolderOpen className="size-3.5" aria-hidden />
           <span className="hidden sm:inline">Load GLB</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void fetch("/api/admin/logout", { method: "POST" }).finally(() => {
+              window.location.href = "/login";
+            });
+          }}
+          className={toolbarToggleClass(false)}
+        >
+          <LogOut className="size-3.5" aria-hidden />
+          <span className="hidden sm:inline">Sign out</span>
         </button>
         {sourceLoaded ? (
           <div ref={menuRef} className="relative">
