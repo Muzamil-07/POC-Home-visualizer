@@ -4,6 +4,9 @@ export const GENERATED_NORMALS_OBJECT =
   "defaults/house-with-generated-normals.glb";
 export const MAX_MODEL_UPLOAD_BYTES = 512 * 1024 * 1024;
 
+export const DEFAULT_HOUSE_R2_URL =
+  "https://pub-d39dedb123b14fc794b0cd3861d45e60.r2.dev/Lucas%20Home%20-%20Full%20Color%20(2)%20(1).glb";
+
 export function supabaseProjectUrl() {
   return (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/\/$/, "");
 }
@@ -20,23 +23,26 @@ export function publicStorageObjectUrl(bucket: string, objectPath: string) {
 export function defaultHouseStorageUrl() {
   const override = process.env.NEXT_PUBLIC_DEFAULT_HOUSE_URL?.trim();
   if (override) return override;
-  return publicStorageObjectUrl(MODELS_BUCKET, DEFAULT_HOUSE_OBJECT);
+  return DEFAULT_HOUSE_R2_URL;
 }
 
 export function generatedNormalsStorageUrl() {
-  const override = process.env.NEXT_PUBLIC_GENERATED_NORMALS_HOUSE_URL?.trim();
-  if (override) return override;
-  return publicStorageObjectUrl(MODELS_BUCKET, GENERATED_NORMALS_OBJECT);
+  return process.env.NEXT_PUBLIC_GENERATED_NORMALS_HOUSE_URL?.trim() || null;
 }
 
 export function isTourModelsPublicUrl(url: string) {
   try {
     const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return false;
+    if (parsed.hostname.endsWith(".r2.dev")) return true;
     return parsed.pathname.includes(
       `/storage/v1/object/public/${MODELS_BUCKET}/`,
     );
   } catch {
-    return url.includes(`/storage/v1/object/public/${MODELS_BUCKET}/`);
+    return (
+      url.includes(".r2.dev/") ||
+      url.includes(`/storage/v1/object/public/${MODELS_BUCKET}/`)
+    );
   }
 }
 

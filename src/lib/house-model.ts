@@ -1,7 +1,9 @@
 import { createModelIdentity } from "@/types/tour";
 import {
   DEFAULT_HOUSE_OBJECT,
+  defaultHouseStorageUrl,
   encodeModelUrl,
+  generatedNormalsStorageUrl,
   GENERATED_NORMALS_OBJECT,
 } from "@/lib/model-storage";
 
@@ -16,9 +18,10 @@ export const GENERATED_NORMALS_HOUSE_PATH = `/models/${GENERATED_NORMALS_HOUSE_F
 export type HouseNormalsVariant = "original" | "generated";
 
 export function houseModelPathForNormals(variant: HouseNormalsVariant) {
-  return variant === "generated"
-    ? GENERATED_NORMALS_HOUSE_PATH
-    : DEFAULT_HOUSE_MODEL_PATH;
+  if (variant === "generated") {
+    return generatedNormalsStorageUrl() ?? GENERATED_NORMALS_HOUSE_PATH;
+  }
+  return defaultHouseStorageUrl() || DEFAULT_HOUSE_MODEL_PATH;
 }
 
 export function houseModelUrlForNormals(variant: HouseNormalsVariant) {
@@ -27,11 +30,13 @@ export function houseModelUrlForNormals(variant: HouseNormalsVariant) {
 
 export function isHouseNormalsModelUrl(url: string) {
   const decoded = decodeURIComponent(url);
+  const remote = defaultHouseStorageUrl();
   return (
     decoded.includes(GENERATED_NORMALS_HOUSE_FILENAME) ||
     decoded.includes(DEFAULT_HOUSE_MODEL_FILENAME) ||
     decoded.includes(GENERATED_NORMALS_OBJECT) ||
-    decoded.includes(DEFAULT_HOUSE_OBJECT)
+    decoded.includes(DEFAULT_HOUSE_OBJECT) ||
+    Boolean(remote && decoded === decodeURIComponent(remote))
   );
 }
 

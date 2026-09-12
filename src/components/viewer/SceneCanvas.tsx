@@ -274,13 +274,24 @@ export function SceneCanvas() {
           }
         }
 
-        const loadedColored = await loadDefaultModel(
-          DEFAULT_HOUSE_MODEL_PATH,
+        const remoteHouse = houseModelUrlForNormals("original");
+        const loadedRemote = await loadDefaultModel(
+          remoteHouse,
           DEFAULT_HOUSE_MODEL_FILENAME,
         );
-        if (loadedColored || controller.signal.aborted || sourceRef.current) {
+        if (loadedRemote || controller.signal.aborted || sourceRef.current) {
           setNormalsVariant("original");
           return;
+        }
+        if (remoteHouse !== encodeModelUrl(DEFAULT_HOUSE_MODEL_PATH)) {
+          const loadedColored = await loadDefaultModel(
+            DEFAULT_HOUSE_MODEL_PATH,
+            DEFAULT_HOUSE_MODEL_FILENAME,
+          );
+          if (loadedColored || controller.signal.aborted || sourceRef.current) {
+            setNormalsVariant("original");
+            return;
+          }
         }
 
         const loadedGenerated = await loadDefaultModel(

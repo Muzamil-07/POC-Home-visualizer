@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   DEFAULT_HOUSE_OBJECT,
+  DEFAULT_HOUSE_R2_URL,
   GENERATED_NORMALS_OBJECT,
   MODELS_BUCKET,
   defaultHouseStorageUrl,
@@ -43,8 +44,9 @@ describe("model storage URLs", () => {
     expect(publicStorageObjectUrl(MODELS_BUCKET, DEFAULT_HOUSE_OBJECT)).toBe(
       `https://abc.supabase.co/storage/v1/object/public/${MODELS_BUCKET}/${DEFAULT_HOUSE_OBJECT}`,
     );
-    expect(isTourModelsPublicUrl(defaultHouseStorageUrl()!)).toBe(true);
-    expect(isTourModelsPublicUrl(generatedNormalsStorageUrl()!)).toBe(true);
+    expect(isTourModelsPublicUrl(DEFAULT_HOUSE_R2_URL)).toBe(true);
+    expect(defaultHouseStorageUrl()).toBe(DEFAULT_HOUSE_R2_URL);
+    expect(generatedNormalsStorageUrl()).toBeNull();
   });
 
   it("prefers explicit house URL overrides", () => {
@@ -84,14 +86,14 @@ describe("house model remapping", () => {
     expect(isHouseNormalsModelUrl("https://cdn.example/other.glb")).toBe(false);
   });
 
-  it("keeps the Full Color house on its local public path", () => {
+  it("rewrites the Full Color house onto the R2 URL", () => {
     const resolved = resolveHouseModelUrl(
       "/Lucas%20Home%20-%20Full%20Color%20(2)%20(1).glb",
     );
     expect(resolved).toBe(houseModelUrlForNormals("original"));
-    expect(resolved).toContain("Lucas%20Home");
+    expect(resolved).toBe(DEFAULT_HOUSE_R2_URL);
     expect(
       publishedHouseModelUrl("/models/house-with-generated-normals.glb"),
-    ).toBe(houseModelUrlForNormals("original"));
+    ).toBe(DEFAULT_HOUSE_R2_URL);
   });
 });
