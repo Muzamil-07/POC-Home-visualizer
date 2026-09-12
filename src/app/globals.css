@@ -1,26 +1,201 @@
-@import "tailwindcss";
+@import "tailwindcss" source("..");
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #141618;
+  --foreground: #efece6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: ui-sans-serif, system-ui, Helvetica, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+button:not(:disabled),
+a[href],
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for],
+select,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"],
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
+/* --- Public / preview exploration chrome --------------------------- */
+
+.explore-chrome-panel {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background:
+    linear-gradient(
+      160deg,
+      rgba(38, 40, 44, 0.82) 0%,
+      rgba(22, 24, 28, 0.78) 100%
+    );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 14px 36px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.explore-chrome-btn:focus-visible,
+.explore-ai-fab:focus-visible {
+  outline: 2px solid rgba(239, 236, 230, 0.55);
+  outline-offset: 2px;
+}
+
+.explore-ai-fab {
+  animation: explore-hint-enter 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.explore-hint-card {
+  animation: explore-hint-enter 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.explore-drag-pointer {
+  transform-origin: 24px 24px;
+  animation: explore-drag-x 2.4s ease-in-out infinite;
+}
+
+.explore-drag-arc-left {
+  animation: explore-arc-pulse 2.4s ease-in-out infinite;
+}
+
+.explore-drag-arc-right {
+  animation: explore-arc-pulse 2.4s ease-in-out infinite 1.2s;
+}
+
+@keyframes explore-hint-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes explore-drag-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  35% {
+    transform: translateX(-7px);
+  }
+  70% {
+    transform: translateX(7px);
+  }
+}
+
+@keyframes explore-arc-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes ai-viz-progress {
+  from {
+    transform: translateX(-80%);
+  }
+  to {
+    transform: translateX(180%);
+  }
+}
+
+.ai-viz-progress {
+  animation: ai-viz-progress 1.6s ease-in-out infinite;
+}
+
+.ai-viz-bubble {
+  background:
+    linear-gradient(
+      165deg,
+      rgba(196, 92, 74, 0.28) 0%,
+      rgba(196, 92, 74, 0.12) 100%
+    );
+  border: 1px solid rgba(196, 92, 74, 0.34);
+}
+
+@keyframes ai-viz-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.ai-viz-skeleton {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      165deg,
+      rgba(196, 92, 74, 0.2) 0%,
+      rgba(28, 24, 24, 0.72) 100%
+    );
+}
+
+.ai-viz-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(244, 210, 198, 0.16) 50%,
+    transparent 100%
+  );
+  animation: ai-viz-shimmer 1.35s ease-in-out infinite;
+}
+
+.ai-viz-key-cta {
+  background:
+    linear-gradient(
+      165deg,
+      rgba(196, 92, 74, 0.3) 0%,
+      rgba(196, 92, 74, 0.14) 100%
+    );
+  border: 1px solid rgba(196, 92, 74, 0.45);
+  box-shadow: 0 0 0 1px rgba(196, 92, 74, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explore-hint-card,
+  .explore-ai-fab,
+  .explore-drag-pointer,
+  .explore-drag-arc-left,
+  .explore-drag-arc-right,
+  .ai-viz-progress,
+  .ai-viz-skeleton::after {
+    animation: none !important;
+  }
 }

@@ -32,10 +32,24 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+.env.local
 
 # vercel
 .vercel
 
+# supabase CLI cache
+/supabase/.temp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated texture / normal-map diagnostics from npm run generate:normals
+/generated/
+
+# Large house GLBs stay on the local machine (over GitHub / Vercel file limits)
+/public/Lucas Home - Full Color (2) (1).glb
+/public/Lucas Home Enviz (1).glb
+/public/models/house-with-generated-normals.glb
+/public/models/house-with-generated-normals.report.json

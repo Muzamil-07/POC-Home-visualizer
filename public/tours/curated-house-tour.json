@@ -1,0 +1,236 @@
+{
+  "id": "lucas-home-full-color-tour",
+  "name": "Lucas Home — Curated Walkthrough",
+  "modelUrl": "/Lucas%20Home%20-%20Full%20Color%20(2)%20(1).glb",
+  "modelDimensions": [46.42, 12.18, 39.39],
+  "version": 3,
+  "stops": [
+    {
+      "id": "stop-front-exterior",
+      "order": 0,
+      "name": "Front Exterior",
+      "description": "Front walkway facing the main door between the garage and living wing.",
+      "floor": "exterior",
+      "roomType": "exterior",
+      "position": [2.52, 6.92, 11.35],
+      "target": [2.62, 6.15, 4.15],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 52
+    },
+    {
+      "id": "stop-main-entrance",
+      "order": 1,
+      "name": "Main Entrance",
+      "description": "Just inside the front door, looking into the foyer.",
+      "floor": "first",
+      "roomType": "entrance",
+      "position": [2.7009, 6.7338, 3.70066],
+      "target": [1.6877, 6.5266, -5.088],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 46
+    },
+    {
+      "id": "stop-foyer",
+      "order": 2,
+      "name": "Foyer",
+      "description": "Open foyer at the center of the first floor.",
+      "floor": "first",
+      "roomType": "foyer",
+      "position": [1.6877, 6.5266, -5.088],
+      "target": [3.2666, 7.2, -5.0004],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 59
+    },
+    {
+      "id": "stop-hallway",
+      "order": 3,
+      "name": "Hallway",
+      "description": "Rear hallway / dining wing on the west side.",
+      "floor": "first",
+      "roomType": "hallway",
+      "position": [-2.988, 7.0332, -12.0552],
+      "target": [-1.2, 6.8, -8.4],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 46
+    },
+    {
+      "id": "stop-living",
+      "order": 4,
+      "name": "Living Room",
+      "description": "Living room beside the foyer, facing the kitchen wing.",
+      "floor": "first",
+      "roomType": "living",
+      "position": [3.2666, 7.6133, -5.0004],
+      "target": [7.4, 7.3, -6.8],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 46
+    },
+    {
+      "id": "stop-kitchen",
+      "order": 5,
+      "name": "Kitchen",
+      "description": "Kitchen at the east end of the first floor.",
+      "floor": "first",
+      "roomType": "kitchen",
+      "position": [9.1888, 7.6688, -8.0444],
+      "target": [6.4, 7.2, -7.4],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 60
+    },
+    {
+      "id": "stop-stairs",
+      "order": 6,
+      "name": "Staircase",
+      "description": "On the stair run between the living room and kitchen wing.",
+      "floor": "stairs",
+      "roomType": "hallway",
+      "position": [6.35, 8.15, -7.55],
+      "target": [6.55, 8.55, -8.6],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 50
+    },
+    {
+      "id": "stop-landing",
+      "order": 7,
+      "name": "Second Floor Landing",
+      "description": "Upper landing at the top of the stair.",
+      "floor": "second",
+      "roomType": "hallway",
+      "position": [6.15, 10.05, -8.85],
+      "target": [8.2, 9.85, -8.4],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 50
+    },
+    {
+      "id": "stop-bedroom",
+      "order": 8,
+      "name": "Upstairs Bedroom",
+      "description": "Second-floor bedroom reached from the landing.",
+      "floor": "second",
+      "roomType": "bedroom",
+      "position": [8.6, 10.15, -8.2],
+      "target": [10.4, 9.9, -8.6],
+      "quaternion": [0, 0, 0, 1],
+      "fov": 52
+    }
+  ],
+  "routes": [
+    {
+      "fromViewpointId": "stop-front-exterior",
+      "toViewpointId": "stop-main-entrance",
+      "bidirectional": true,
+      "walkingSpeed": 1.0,
+      "turnRadius": 0.28,
+      "nodes": [
+        { "id": "node-walkway-far", "floorPosition": [2.53, 5.25, 10.15] },
+        { "id": "node-walkway", "floorPosition": [2.55, 5.25, 8.35] },
+        { "id": "node-before-door", "floorPosition": [2.58, 5.20, 7.05] },
+        { "id": "node-front-door", "floorPosition": [2.62, 5.18, 6.05] },
+        { "id": "node-vestibule", "floorPosition": [2.68, 5.12, 4.85] },
+        { "id": "node-inside-approach", "floorPosition": [2.70, 5.10, 4.15] }
+      ]
+    },
+    {
+      "fromViewpointId": "stop-main-entrance",
+      "toViewpointId": "stop-foyer",
+      "bidirectional": true,
+      "walkingSpeed": 1.0,
+      "turnRadius": 0.30,
+      "nodes": [
+        { "id": "node-entry-hall-1", "floorPosition": [2.55, 5.12, 2.15] },
+        { "id": "node-entry-hall-2", "floorPosition": [2.40, 5.10, 0.35] },
+        { "id": "node-entry-hall-3", "floorPosition": [2.20, 5.06, -1.45] },
+        { "id": "node-entry-hall-4", "floorPosition": [2.00, 5.00, -3.15] },
+        { "id": "node-foyer-door", "floorPosition": [1.80, 4.95, -4.25] }
+      ]
+    },
+    {
+      "fromViewpointId": "stop-foyer",
+      "toViewpointId": "stop-hallway",
+      "bidirectional": true,
+      "walkingSpeed": 1.0,
+      "turnRadius": 0.35,
+      "nodes": [
+        { "id": "node-foyer-leave", "floorPosition": [1.15, 5.15, -5.20] },
+        { "id": "node-west-approach", "floorPosition": [0.15, 5.16, -5.40] },
+        { "id": "node-west-before-corner", "floorPosition": [-0.55, 5.18, -6.15] },
+        { "id": "node-west-after-corner", "floorPosition": [-0.95, 5.20, -7.45] },
+        { "id": "node-dining-hall", "floorPosition": [-1.55, 5.25, -8.95] },
+        { "id": "node-hall-before-dest", "floorPosition": [-2.25, 5.32, -10.55] },
+        { "id": "node-hall-approach", "floorPosition": [-2.70, 5.38, -11.45] }
+      ]
+    },
+    {
+      "fromViewpointId": "stop-hallway",
+      "toViewpointId": "stop-living",
+      "bidirectional": true,
+      "walkingSpeed": 1.0,
+      "turnRadius": 0.35,
+      "nodes": [
+        { "id": "node-return-leave", "floorPosition": [-2.25, 5.32, -10.55] },
+        { "id": "node-return-hall", "floorPosition": [-1.55, 5.25, -8.95] },
+        { "id": "node-return-before-corner", "floorPosition": [-0.95, 5.20, -7.45] },
+        { "id": "node-return-after-corner", "floorPosition": [0.15, 5.18, -5.50] },
+        { "id": "node-return-foyer", "floorPosition": [1.15, 5.20, -5.18] },
+        { "id": "node-living-door", "floorPosition": [2.25, 5.40, -5.08] },
+        { "id": "node-living-approach", "floorPosition": [2.90, 5.70, -5.04] }
+      ]
+    },
+    {
+      "fromViewpointId": "stop-living",
+      "toViewpointId": "stop-kitchen",
+      "bidirectional": true,
+      "walkingSpeed": 1.0,
+      "turnRadius": 0.32,
+      "nodes": [
+        { "id": "node-living-south", "floorPosition": [3.55, 5.78, -4.55] },
+        { "id": "node-before-east-turn", "floorPosition": [4.85, 5.80, -4.40] },
+        { "id": "node-after-east-turn", "floorPosition": [6.25, 5.82, -4.55] },
+        { "id": "node-south-of-stairs", "floorPosition": [7.45, 5.84, -5.25] },
+        { "id": "node-before-kitchen-turn", "floorPosition": [8.15, 5.86, -6.35] },
+        { "id": "node-after-kitchen-turn", "floorPosition": [8.70, 5.88, -7.35] },
+        { "id": "node-kitchen-approach", "floorPosition": [8.95, 5.90, -7.75] }
+      ]
+    },
+    {
+      "fromViewpointId": "stop-kitchen",
+      "toViewpointId": "stop-stairs",
+      "bidirectional": true,
+      "walkingSpeed": 0.85,
+      "turnRadius": 0.22,
+      "nodes": [
+        { "id": "node-kitchen-leave", "floorPosition": [8.45, 5.90, -7.70] },
+        { "id": "node-before-stair", "floorPosition": [7.55, 5.92, -7.40] },
+        { "id": "node-stair-entry", "floorPosition": [6.95, 6.08, -7.22] },
+        { "id": "node-stair-first-treads", "floorPosition": [6.62, 6.50, -7.32] },
+        { "id": "node-stair-mid-run", "floorPosition": [6.48, 7.05, -7.48] }
+      ]
+    },
+    {
+      "fromViewpointId": "stop-stairs",
+      "toViewpointId": "stop-landing",
+      "bidirectional": true,
+      "walkingSpeed": 0.85,
+      "turnRadius": 0.22,
+      "nodes": [
+        { "id": "node-stair-upper-run", "floorPosition": [6.48, 7.55, -7.82] },
+        { "id": "node-before-landing-turn", "floorPosition": [6.42, 8.05, -8.22] },
+        { "id": "node-after-landing-turn", "floorPosition": [6.28, 8.35, -8.58] },
+        { "id": "node-landing-approach", "floorPosition": [6.20, 8.42, -8.72] }
+      ]
+    },
+    {
+      "fromViewpointId": "stop-landing",
+      "toViewpointId": "stop-bedroom",
+      "bidirectional": true,
+      "walkingSpeed": 1.0,
+      "turnRadius": 0.28,
+      "nodes": [
+        { "id": "node-landing-center", "floorPosition": [6.35, 8.42, -8.70] },
+        { "id": "node-landing-after-turn", "floorPosition": [7.15, 8.46, -8.50] },
+        { "id": "node-bedroom-door", "floorPosition": [7.85, 8.48, -8.32] },
+        { "id": "node-bedroom-approach", "floorPosition": [8.25, 8.50, -8.24] }
+      ]
+    }
+  ]
+}
