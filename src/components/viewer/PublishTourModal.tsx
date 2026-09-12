@@ -22,6 +22,7 @@ import {
   isPublishableModelUrl,
 } from "@/lib/build-published-tour";
 import { isSupabaseBrowserConfigured } from "@/lib/public-config";
+import { rewriteShareUrlForClient } from "@/lib/app-url";
 import type { GroundSettings } from "@/lib/ground";
 
 type PublishTourModalProps = {
@@ -80,7 +81,9 @@ function PublishTourForm({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [shareUrl, setShareUrl] = useState(record?.shareUrl ?? "");
+  const [shareUrl, setShareUrl] = useState(() =>
+    rewriteShareUrlForClient(record?.shareUrl ?? ""),
+  );
   const [modelReachable, setModelReachable] = useState<boolean | null>(null);
   const [aiVisualizationEnabled, setAiVisualizationEnabled] = useState(
     record?.aiVisualizationEnabled !== false,
@@ -176,7 +179,7 @@ function PublishTourForm({
         }
         throw new Error(body.error || "Couldn't publish this tour.");
       }
-      const nextShare = body.shareUrl || shareUrl;
+      const nextShare = rewriteShareUrlForClient(body.shareUrl || shareUrl);
       const snapshot = await hashPublishedSnapshot(tourData);
       usePublishStore.getState().saveRecord(modelId, {
         tourId: body.id || record?.tourId || "",

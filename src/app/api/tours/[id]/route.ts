@@ -97,6 +97,6 @@ export async function PUT(
   return NextResponse.json({
     id: existing.id,
     slug: existing.slug,
-    shareUrl: publicShareUrl(existing.slug),
+    shareUrl: publicShareUrl(existing.slug, request),
   });
 }

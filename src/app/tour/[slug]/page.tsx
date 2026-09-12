@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { PublicTourClient } from "@/components/player/PublicTourClient";
 import { getPublishedTourBySlug } from "@/lib/supabase/published-tour";
@@ -21,7 +22,7 @@ export async function generateMetadata({
       description: "This architectural tour is unavailable.",
     };
   }
-  const url = publicShareUrl(tour.slug);
+  const url = publicShareUrl(tour.slug, await headers());
   return {
     title: tour.title,
     description: `A published architectural walkthrough of ${tour.title}.`,

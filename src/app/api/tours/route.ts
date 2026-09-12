@@ -87,7 +87,7 @@ export async function POST(request: Request) {
         id: data.id,
         slug: data.slug,
         editToken,
-        shareUrl: publicShareUrl(data.slug),
+        shareUrl: publicShareUrl(data.slug, request),
       });
     }
 

@@ -1,11 +1,14 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  publicSharePath,
+  resolvePublicOrigin,
+} from "@/lib/app-url";
 
-export function getAppUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
-    /\/$/,
-    "",
-  );
+export function getAppUrl(
+  source?: Request | { get(name: string): string | null },
+) {
+  return resolvePublicOrigin(source);
 }
 
 export function getPublicSupabaseConfig() {
@@ -46,6 +49,9 @@ export function createAnonSupabase(): SupabaseClient | null {
   });
 }
 
-export function publicShareUrl(slug: string) {
-  return `${getAppUrl()}/tour/${slug}`;
+export function publicShareUrl(
+  slug: string,
+  source?: Request | { get(name: string): string | null },
+) {
+  return `${getAppUrl(source)}${publicSharePath(slug)}`;
 }
