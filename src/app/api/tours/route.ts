@@ -98,6 +98,12 @@ export async function POST(request: Request) {
     }
 
     console.error("[tours] create failed", error.code, error.message);
+    if (!error.code && /fetch failed/i.test(error.message)) {
+      return errorResponse(
+        "Couldn't reach Supabase. Check that NEXT_PUBLIC_SUPABASE_URL is correct and the Supabase project is active (not paused or deleted).",
+        503,
+      );
+    }
     if (error.code === "PGRST205") {
       return errorResponse(
         "The tours table is missing in Supabase. Run supabase/migrations/001_create_tours.sql in the SQL Editor, then try again.",

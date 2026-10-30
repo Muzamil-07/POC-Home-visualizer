@@ -29,6 +29,7 @@ import {
 } from "./glb";
 import { SectionControls } from "./SectionControls";
 import { GroundControls } from "./GroundControls";
+import { ColorControls } from "./ColorControls";
 import { defaultGroundSettings } from "@/lib/ground";
 
 type EditorSidebarProps = {
@@ -220,7 +221,7 @@ export function EditorSidebar({
       )}
 
       {modelStats ? (
-        <div className="mt-auto shrink-0 border-t border-white/8">
+        <div className="mt-auto min-h-0 overflow-y-auto border-t border-white/8">
           <CollapsibleSection title="Model" defaultOpen>
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] text-[#9aa0a6]">
               <dt>File</dt>
@@ -279,6 +280,9 @@ export function EditorSidebar({
                 }
               />
             </div>
+          </CollapsibleSection>
+          <CollapsibleSection title="Colors" defaultOpen>
+            <ColorControls disabled={!modelReady || isPlacementMode} />
           </CollapsibleSection>
           <CollapsibleSection title="Section Cut" defaultOpen>
             <SectionControls modelHeight={modelStats.height} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import {
   GizmoHelper,
@@ -9,7 +9,13 @@ import {
   PerspectiveCamera,
 } from "@react-three/drei";
 import { X } from "lucide-react";
-import { selectCurrentGround, selectStartViewpoint, useTourStore } from "@/store/tour-store";
+import {
+  selectCurrentColorOverrides,
+  selectCurrentConfigurables,
+  selectCurrentGround,
+  selectStartViewpoint,
+  useTourStore,
+} from "@/store/tour-store";
 import { clippingForModel, previewClipping } from "./editor-camera";
 import { DemoScene } from "./DemoScene";
 import { EditHeader } from "./EditHeader";
@@ -28,6 +34,14 @@ import {
   PlacementLayer,
 } from "./PlacementLayer";
 import { PlacementOverlay } from "./PlacementOverlay";
+import { ColorPickLayer } from "./ColorPickLayer";
+import {
+  ConfigurableHotspotLayer,
+  ConfigurableHotspotTracker,
+} from "@/components/player/ConfigurableHotspots";
+import { ConfiguratorOverlay } from "@/components/player/ConfiguratorOverlay";
+import { useConfiguratorStore } from "@/store/configurator-store";
+import { mergeConfiguratorChoices } from "@/lib/configurables";
 import { TourChrome } from "./TourChrome";
 import {
   TemplateTourBanner,
@@ -147,6 +161,12 @@ export function SceneCanvas() {
   const inspectorOpen = useTourStore((state) => state.inspectorOpen);
   const selectedId = useTourStore((state) => state.selectedId);
   const isPlacementMode = useTourStore((state) => state.isPlacementMode);
+  const isColorPickMode = useTourStore((state) => state.isColorPickMode);
+  const savedColorOverrides = useTourStore(selectCurrentColorOverrides);
+  const configurables = useTourStore(selectCurrentConfigurables);
+  const activeConfigurableId = useTourStore((state) => state.activeConfigurableId);
+  const configuratorChoices = useConfiguratorStore((state) => state.choices);
+  const configuratorOpenId = useConfiguratorStore((state) => state.openId);
   const editorFov = useTourStore((state) => state.editorFov);
   const appMode = useTourStore((state) => state.appMode);
   const sectionEnabled = useTourStore((state) => state.section.enabled);
@@ -155,6 +175,23 @@ export function SceneCanvas() {
   const isTour = appMode === "tour";
   const isExplore = appMode === "explore";
   const startViewpoint = useTourStore(selectStartViewpoint);
+  // Preview Exploration behaves like the public tour, including visitor
+  // color choices; editing always shows the saved colors.
+  const colorOverrides = useMemo(
+    () =>
+      isExplore
+        ? mergeConfiguratorChoices(
+            savedColorOverrides,
+            configurables,
+            configuratorChoices,
+          )
+        : savedColorOverrides,
+    [configurables, configuratorChoices, isExplore, savedColorOverrides],
+  );
+
+  useEffect(() => {
+    if (isExplore) useConfiguratorStore.getState().reset();
+  }, [isExplore]);
   const { dirty, hasPublished } = useUnsavedPublishedTour(
     source,
     modelStats,
@@ -405,6 +442,8 @@ export function SceneCanvas() {
     ? previewClipping(modelSize)
     : clippingForModel(modelSize ?? { width: 12, height: 12, depth: 12 });
   const showInspector = isEdit && inspectorOpen && Boolean(selectedId);
+  const showHotspots =
+    Boolean(source && modelStats) && (isEdit || isExplore) && configurables.length > 0;
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-[#141618]">
@@ -504,12 +543,18 @@ export function SceneCanvas() {
             style={{
               width: "100%",
               height: "100%",
-              cursor: isPlacementMode ? "crosshair" : undefined,
+              cursor: isPlacementMode || isColorPickMode ? "crosshair" : undefined,
               touchAction: isTour || isExplore ? "none" : "auto",
             }}
             onPointerMissed={() => {
               const store = useTourStore.getState();
-              if (store.appMode !== "edit" || store.isPlacementMode) return;
+              if (
+                store.appMode !== "edit" ||
+                store.isPlacementMode ||
+                store.isColorPickMode
+              ) {
+                return;
+              }
               if (!pointerRef.current.dragged) {
                 store.selectViewpoint(null);
               }
@@ -564,6 +609,7 @@ export function SceneCanvas() {
                 doubleSided={doubleSided}
                 onReady={setModelStats}
                 onError={handleModelError}
+                colorOverrides={colorOverrides}
               />
             ) : (
               <DemoScene wireframe={wireframe} />
@@ -575,6 +621,7 @@ export function SceneCanvas() {
               <PlacementLayer modelSize={modelSize} />
             ) : null}
             {source && isEdit ? <SectionLayer modelSize={modelSize} /> : null}
+            {source && isEdit ? <ColorPickLayer modelSize={modelSize} /> : null}
             {SHOW_EDITOR_GRID && isEdit ? (
               <Grid
                 infiniteGrid
@@ -602,6 +649,15 @@ export function SceneCanvas() {
                 modelReady
               />
             ) : null}
+            {showHotspots ? (
+              // Keyed by mode: the frame priority differs between editing and
+              // exploring, and useFrame reads it only on mount.
+              <ConfigurableHotspotTracker
+                key={appMode}
+                items={configurables}
+                cullHidden={isExplore}
+              />
+            ) : null}
             <PlacementCameraLock />
             <ScenePointerTracker pointerRef={pointerRef} />
             {isEdit ? (
@@ -616,6 +672,21 @@ export function SceneCanvas() {
           </Canvas>
           ) : null}
 
+          {showHotspots ? (
+            <ConfigurableHotspotLayer
+              items={configurables}
+              activeId={isExplore ? configuratorOpenId : activeConfigurableId}
+              onSelect={(id) => {
+                if (isExplore) {
+                  useConfiguratorStore
+                    .getState()
+                    .open(configuratorOpenId === id ? null : id);
+                  return;
+                }
+                useTourStore.getState().setActiveConfigurable(id);
+              }}
+            />
+          ) : null}
           <ModelLoadingOverlay visible={isLoadingModel} />
           {isEdit &&
           source &&
@@ -655,6 +726,9 @@ export function SceneCanvas() {
             />
           ) : null}
           {isTour ? <TourChrome /> : null}
+          {isExplore && modelStats ? (
+            <ConfiguratorOverlay items={configurables} />
+          ) : null}
           {isExplore ? (
             <ExplorationChrome
               title="Architectural Tour"

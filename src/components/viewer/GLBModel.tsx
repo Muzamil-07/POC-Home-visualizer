@@ -21,6 +21,11 @@ import { registerGlbRoot, getGlbRoot } from "./glb-root";
 import { disposeTemplateBoundsTrees } from "@/lib/tour-template-generator";
 import { setModelLoadProgress } from "@/lib/load-progress";
 import {
+  applyColorOverrides,
+  resetColorOverrides,
+  type ModelColorOverride,
+} from "@/lib/model-colors";
+import {
   disposeOptimizedScene,
   disposeSourceGeometries,
   optimizeSceneForViewing,
@@ -41,7 +46,10 @@ type GLBModelProps = {
   onReady: (stats: ModelStats) => void;
   lockedTransform?: ModelTransform | null;
   autoFrame?: boolean;
+  colorOverrides?: readonly ModelColorOverride[];
 };
+
+const NO_COLOR_OVERRIDES: readonly ModelColorOverride[] = [];
 
 type Sized = {
   x: number;
@@ -233,6 +241,7 @@ export function GLBModel({
   onReady,
   lockedTransform = null,
   autoFrame = true,
+  colorOverrides = NO_COLOR_OVERRIDES,
 }: GLBModelProps) {
   const [prepared, setPrepared] = useState<
     (OptimizedScene & { size: Sized; offset: Sized }) | null
@@ -305,14 +314,17 @@ export function GLBModel({
     if (!root) return;
     return () => {
       disposeTemplateBoundsTrees(root);
+      resetColorOverrides(root);
       disposeOptimizedScene(root, Boolean(prepared?.merged));
     };
   }, [prepared?.group, prepared?.merged]);
 
   useEffect(() => {
     if (!prepared) return;
+    applyColorOverrides(prepared.group, colorOverrides);
     applyDebugMaterials(prepared.group, wireframe, doubleSided);
-  }, [prepared, wireframe, doubleSided]);
+    invalidate();
+  }, [prepared, wireframe, doubleSided, colorOverrides, invalidate]);
 
   useLayoutEffect(() => {
     if (!prepared) return;

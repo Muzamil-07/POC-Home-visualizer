@@ -188,7 +188,24 @@ select:disabled {
   box-shadow: 0 0 0 1px rgba(196, 92, 74, 0.08);
 }
 
+.configurable-hotspot-ping {
+  animation: configurable-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes configurable-ping {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  80%,
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .configurable-hotspot-ping,
   .explore-hint-card,
   .explore-ai-fab,
   .explore-drag-pointer,

@@ -7,6 +7,8 @@ import {
   hashPublishedSnapshot,
 } from "@/lib/build-published-tour";
 import {
+  selectCurrentColorOverrides,
+  selectCurrentConfigurables,
   selectCurrentViewpoints,
   selectStartViewpointId,
   useTourStore,
@@ -19,6 +21,8 @@ export function useUnsavedPublishedTour(
 ) {
   const viewpoints = useTourStore(selectCurrentViewpoints);
   const startViewpointId = useTourStore(selectStartViewpointId);
+  const colorOverrides = useTourStore(selectCurrentColorOverrides);
+  const configurables = useTourStore(selectCurrentConfigurables);
   const modelId = useTourStore((state) => state.modelId);
   const record = usePublishStore((state) =>
     modelId ? state.recordsByModel[modelId] ?? null : null,
@@ -41,6 +45,8 @@ export function useUnsavedPublishedTour(
             viewpoints,
             startViewpointId,
             ground,
+            colorOverrides,
+            configurables,
           });
           const hash = await hashPublishedSnapshot(data);
           if (!cancelled) {
@@ -56,7 +62,7 @@ export function useUnsavedPublishedTour(
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [ground, modelId, record, source, startViewpointId, stats, viewpoints]);
+  }, [colorOverrides, configurables, ground, modelId, record, source, startViewpointId, stats, viewpoints]);
 
   return {
     record,

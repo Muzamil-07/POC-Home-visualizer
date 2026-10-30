@@ -10,6 +10,12 @@ import { DEFAULT_NAVIGATION } from "@/lib/exploration";
 import { DEFAULT_AI_VISUALIZATION } from "@/lib/ai-visualization";
 import type { StartView } from "@/types/exploration";
 import type { AiVisualizationSettings } from "@/types/ai-visualization";
+import { HEX_COLOR_PATTERN, MAX_COLOR_OVERRIDES } from "@/lib/model-colors";
+import {
+  MAX_CONFIGURABLE_COLORS,
+  MAX_CONFIGURABLE_PARTS,
+  MAX_CONFIGURABLES,
+} from "@/lib/configurables";
 
 export const MAX_TOUR_JSON_BYTES = 750_000;
 export const PUBLISHED_TOUR_SCHEMA_VERSION = 3 as const;
@@ -60,6 +66,26 @@ export const publishedViewpointSchema = z.object({
   fov: z.number().finite().min(20).max(100),
 });
 
+export const modelColorOverrideSchema = z.object({
+  target: z.enum(["object", "material"]),
+  key: z.string().regex(/^[om]\d{1,7}$/),
+  color: z.string().regex(HEX_COLOR_PATTERN, "Colors must be #rrggbb."),
+});
+
+export const configurableItemSchema = z.object({
+  id: z.string().min(1).max(40),
+  name: z.string().trim().min(1).max(60),
+  anchor: vector3TupleSchema,
+  parts: z
+    .array(modelColorOverrideSchema.pick({ target: true, key: true }))
+    .min(1)
+    .max(MAX_CONFIGURABLE_PARTS),
+  colors: z
+    .array(z.string().regex(HEX_COLOR_PATTERN, "Colors must be #rrggbb."))
+    .min(1)
+    .max(MAX_CONFIGURABLE_COLORS),
+});
+
 export const startViewSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(120),
@@ -108,6 +134,10 @@ export const publishedTourDataInnerSchema = z
           max: vector3TupleSchema,
         })
         .optional(),
+      colorOverrides: z
+        .array(modelColorOverrideSchema)
+        .max(MAX_COLOR_OVERRIDES)
+        .optional(),
     }),
     startView: startViewSchema,
     navigation: navigationSettingsSchema,
@@ -125,6 +155,7 @@ export const publishedTourDataInnerSchema = z
       ground: sceneGroundSchema,
     }),
     aiVisualization: aiVisualizationSettingsSchema,
+    configurables: z.array(configurableItemSchema).max(MAX_CONFIGURABLES).optional(),
   })
   .superRefine((value, ctx) => {
     const viewpoints = value.viewpoints ?? [];

@@ -18,6 +18,8 @@ import {
 } from "@/lib/tour-schema";
 import type { TourViewpoint } from "@/types/tour";
 import { publishedHouseModelUrl } from "@/lib/house-model";
+import type { ModelColorOverride } from "@/lib/model-colors";
+import type { ConfigurableItem } from "@/lib/configurables";
 
 export const BLOB_MODEL_MESSAGE =
   "This model only exists in your browser. Load it from a public model URL before publishing.";
@@ -66,6 +68,8 @@ export function buildPublishedTourData(input: {
   dwellTime?: number;
   transitionDuration?: number;
   aiVisualization?: AiVisualizationSettings | null;
+  colorOverrides?: readonly ModelColorOverride[];
+  configurables?: readonly ConfigurableItem[];
 }): PublishedTourData {
   const viewpoints = [...input.viewpoints]
     .sort((a, b) => a.order - b.order)
@@ -106,6 +110,15 @@ export function buildPublishedTourData(input: {
           input.stats.depth / 2,
         ],
       },
+      // Omitted when empty so tours published before colors existed keep
+      // the same snapshot hash.
+      colorOverrides: input.colorOverrides?.length
+        ? input.colorOverrides.map(({ target, key, color }) => ({
+            target,
+            key,
+            color,
+          }))
+        : undefined,
     },
     startView: {
       id: start.id,
@@ -135,6 +148,19 @@ export function buildPublishedTourData(input: {
       maxFollowUps:
         input.aiVisualization?.maxFollowUps ?? DEFAULT_AI_VISUALIZATION.maxFollowUps,
     },
+    // Items without parts can't be recolored, so they are left out.
+    configurables: (() => {
+      const items = (input.configurables ?? [])
+        .filter((item) => item.parts.length > 0 && item.colors.length > 0)
+        .map(({ id, name, anchor, parts, colors }) => ({
+          id,
+          name: name.trim() || "Item",
+          anchor,
+          parts: parts.map(({ target, key }) => ({ target, key })),
+          colors,
+        }));
+      return items.length ? items : undefined;
+    })(),
   };
 
   return publishedTourDataInnerSchema.parse(normalizePublishedTourData(data));

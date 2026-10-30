@@ -8,6 +8,7 @@ import {
   subscribeModelLoadProgress,
   type ModelLoadProgress,
 } from "@/lib/load-progress";
+import type { ModelColorOverride } from "@/lib/model-colors";
 
 type ModelLoaderProps = {
   source: ModelSource;
@@ -17,6 +18,7 @@ type ModelLoaderProps = {
   onError: (message: string) => void;
   lockedTransform?: ModelTransform | null;
   autoFrame?: boolean;
+  colorOverrides?: readonly ModelColorOverride[];
 };
 
 type ErrorBoundaryProps = {
@@ -111,6 +113,7 @@ export function ModelLoader({
   onError,
   lockedTransform = null,
   autoFrame = true,
+  colorOverrides,
 }: ModelLoaderProps) {
   return (
     <ModelErrorBoundary key={source.url} onError={onError}>
@@ -122,6 +125,7 @@ export function ModelLoader({
         onReady={onReady}
         lockedTransform={lockedTransform}
         autoFrame={autoFrame}
+        colorOverrides={colorOverrides}
       />
     </ModelErrorBoundary>
   );

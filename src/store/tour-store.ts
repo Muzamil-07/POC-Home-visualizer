@@ -27,12 +27,29 @@ import { applyEyeHeightToDraft } from "@/components/viewer/placement";
 import type { CuratedHouseTour } from "@/types/curated-tour";
 import { viewpointsFromCuratedTour } from "@/lib/curated-tour";
 import type { GroundSettings } from "@/lib/ground";
+import {
+  upsertColorOverride,
+  type ModelColorOverride,
+  type ModelColorSelection,
+  type ModelColorTarget,
+} from "@/lib/model-colors";
+import {
+  addConfigurablePart,
+  createConfigurableId,
+  DEFAULT_CONFIGURABLE_COLORS,
+  MAX_CONFIGURABLES,
+  nextConfigurableName,
+  type ConfigurableItem,
+  type ConfigurablePart,
+} from "@/lib/configurables";
 
 type PersistedTourState = {
   viewpointsByModel: Record<string, TourViewpoint[]>;
   localTourOverrideByModel: Record<string, boolean>;
   groundByModel: Record<string, GroundSettings>;
   startViewpointIdByModel: Record<string, string>;
+  colorsByModel: Record<string, ModelColorOverride[]>;
+  configurablesByModel: Record<string, ConfigurableItem[]>;
 };
 
 type TourState = PersistedTourState & {
@@ -61,6 +78,27 @@ type TourState = PersistedTourState & {
   section: SectionState;
   sectionInitialized: boolean;
   detectedSiteGrade: number | null;
+  isColorPickMode: boolean;
+  colorSelection: ModelColorSelection | null;
+  colorScope: ModelColorTarget;
+  /** When set, the next pick adds a part to this configurable item. */
+  colorPickAddTo: string | null;
+  activeConfigurableId: string | null;
+  setColorScope: (scope: ModelColorTarget) => void;
+  startAddConfigurablePart: (id: string) => void;
+  createConfigurable: () => string | null;
+  updateConfigurable: (
+    id: string,
+    patch: Partial<Pick<ConfigurableItem, "name" | "anchor" | "colors" | "parts">>,
+  ) => void;
+  addPartToConfigurable: (id: string, part: ConfigurablePart) => void;
+  removeConfigurable: (id: string) => void;
+  setActiveConfigurable: (id: string | null) => void;
+  setColorPickMode: (active: boolean) => void;
+  setColorSelection: (selection: ModelColorSelection | null) => void;
+  setColorOverride: (override: ModelColorOverride) => void;
+  removeColorOverride: (override: Pick<ModelColorOverride, "target" | "key">) => void;
+  clearColorOverrides: () => void;
   setCurrentModel: (identity: ModelIdentityInput | null) => void;
   addViewpoint: (snapshot: EditorCameraSnapshot) => TourViewpoint | null;
   updateViewpoint: (id: string, patch: Partial<TourViewpoint>) => void;
@@ -174,6 +212,13 @@ export const useTourStore = create<TourState>()(
       localTourOverrideByModel: {},
       groundByModel: {},
       startViewpointIdByModel: {},
+      colorsByModel: {},
+      configurablesByModel: {},
+      isColorPickMode: false,
+      colorSelection: null,
+      colorScope: "object",
+      colorPickAddTo: null,
+      activeConfigurableId: null,
       tourFade: 0,
       modelId: null,
       selectedId: null,
@@ -216,6 +261,10 @@ export const useTourStore = create<TourState>()(
           detectedSiteGrade: null,
           ...idleTourState(),
           ...idlePlacementState(),
+          isColorPickMode: false,
+          colorSelection: null,
+          colorPickAddTo: null,
+          activeConfigurableId: null,
         });
       },
 
@@ -428,6 +477,7 @@ export const useTourStore = create<TourState>()(
           selectedId: null,
           inspectorOpen: false,
           placementNotice: null,
+          isColorPickMode: false,
         });
       },
 
@@ -629,6 +679,125 @@ export const useTourStore = create<TourState>()(
         }),
 
       setDetectedSiteGrade: (value) => set({ detectedSiteGrade: value }),
+      setColorPickMode: (active) => {
+        const state = get();
+        if (active && (!state.modelId || isLockedMode(state.appMode))) return;
+        if (active && state.isPlacementMode) state.cancelPlacement();
+        set({
+          isColorPickMode: active,
+          colorPickAddTo: active ? state.colorPickAddTo : null,
+        });
+      },
+      setColorScope: (scope) => set({ colorScope: scope }),
+      startAddConfigurablePart: (id) => {
+        get().setColorPickMode(true);
+        if (get().isColorPickMode) {
+          set({ colorPickAddTo: id, activeConfigurableId: id });
+        }
+      },
+      createConfigurable: () => {
+        const state = get();
+        const selection = state.colorSelection;
+        if (!state.modelId || !selection) return null;
+        const list = state.configurablesByModel[state.modelId] ?? [];
+        if (list.length >= MAX_CONFIGURABLES) return null;
+        const item: ConfigurableItem = {
+          id: createConfigurableId(),
+          name: nextConfigurableName(list),
+          anchor: selection.point,
+          parts: [
+            {
+              target: state.colorScope,
+              key:
+                state.colorScope === "object"
+                  ? selection.objectKey
+                  : selection.materialKey,
+            },
+          ],
+          colors: [...DEFAULT_CONFIGURABLE_COLORS],
+        };
+        set({
+          configurablesByModel: {
+            ...state.configurablesByModel,
+            [state.modelId]: [...list, item],
+          },
+          activeConfigurableId: item.id,
+        });
+        return item.id;
+      },
+      updateConfigurable: (id, patch) => {
+        const state = get();
+        if (!state.modelId) return;
+        set({
+          configurablesByModel: {
+            ...state.configurablesByModel,
+            [state.modelId]: (state.configurablesByModel[state.modelId] ?? []).map(
+              (item) => (item.id === id ? { ...item, ...patch } : item),
+            ),
+          },
+        });
+      },
+      addPartToConfigurable: (id, part) => {
+        const state = get();
+        if (!state.modelId) return;
+        set({
+          configurablesByModel: {
+            ...state.configurablesByModel,
+            [state.modelId]: (state.configurablesByModel[state.modelId] ?? []).map(
+              (item) => (item.id === id ? addConfigurablePart(item, part) : item),
+            ),
+          },
+        });
+      },
+      removeConfigurable: (id) => {
+        const state = get();
+        if (!state.modelId) return;
+        set({
+          configurablesByModel: {
+            ...state.configurablesByModel,
+            [state.modelId]: (state.configurablesByModel[state.modelId] ?? []).filter(
+              (item) => item.id !== id,
+            ),
+          },
+          activeConfigurableId:
+            state.activeConfigurableId === id ? null : state.activeConfigurableId,
+          colorPickAddTo: state.colorPickAddTo === id ? null : state.colorPickAddTo,
+        });
+      },
+      setActiveConfigurable: (id) => set({ activeConfigurableId: id }),
+      setColorSelection: (selection) => set({ colorSelection: selection }),
+      setColorOverride: (override) => {
+        const state = get();
+        if (!state.modelId) return;
+        set({
+          colorsByModel: {
+            ...state.colorsByModel,
+            [state.modelId]: upsertColorOverride(
+              state.colorsByModel[state.modelId] ?? [],
+              override,
+            ),
+          },
+        });
+      },
+      removeColorOverride: ({ target, key }) => {
+        const state = get();
+        if (!state.modelId) return;
+        set({
+          colorsByModel: {
+            ...state.colorsByModel,
+            [state.modelId]: (state.colorsByModel[state.modelId] ?? []).filter(
+              (item) => !(item.target === target && item.key === key),
+            ),
+          },
+        });
+      },
+      clearColorOverrides: () => {
+        const state = get();
+        if (!state.modelId) return;
+        set({
+          colorsByModel: { ...state.colorsByModel, [state.modelId]: [] },
+        });
+      },
       setGroundSettings: (patch) => {
         const state = get();
         if (!state.modelId) return;
@@ -690,6 +859,8 @@ export const useTourStore = create<TourState>()(
         localTourOverrideByModel: state.localTourOverrideByModel,
         groundByModel: state.groundByModel,
         startViewpointIdByModel: state.startViewpointIdByModel,
+        colorsByModel: state.colorsByModel,
+        configurablesByModel: state.configurablesByModel,
       }),
       skipHydration: true,
       merge: (persisted, current) => {
@@ -763,3 +934,17 @@ export function selectCurrentGround(state: TourState) {
   return state.groundByModel[state.modelId] ?? null;
 }
 
+
+const EMPTY_COLOR_OVERRIDES: ModelColorOverride[] = [];
+
+export function selectCurrentColorOverrides(state: TourState) {
+  if (!state.modelId) return EMPTY_COLOR_OVERRIDES;
+  return state.colorsByModel[state.modelId] ?? EMPTY_COLOR_OVERRIDES;
+}
+
+const EMPTY_CONFIGURABLES: ConfigurableItem[] = [];
+
+export function selectCurrentConfigurables(state: TourState) {
+  if (!state.modelId) return EMPTY_CONFIGURABLES;
+  return state.configurablesByModel[state.modelId] ?? EMPTY_CONFIGURABLES;
+}

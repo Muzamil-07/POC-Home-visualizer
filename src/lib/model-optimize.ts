@@ -10,6 +10,11 @@ import {
 } from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { prepareNormalMappedMaterials } from "@/lib/model-normals";
+import {
+  materialColorKey,
+  objectColorKey,
+  type ColorRange,
+} from "@/lib/model-colors";
 
 export const HEAVY_MESH_COUNT = 250;
 const MERGE_VERTEX_BUDGET = 480_000;
@@ -111,49 +116,88 @@ function applyMeshShadows(mesh: Mesh) {
   mesh.castShadow = size.y > 0.28 || size.x * size.z > 8;
 }
 
+type ChunkPart = {
+  geometry: BufferGeometry;
+  colorKey: string;
+};
+
+function tagSourceMeshes(meshes: Mesh[]) {
+  const firstBySignature = new Map<string, number>();
+  meshes.forEach((mesh, index) => {
+    const material = getMaterials(mesh)[0];
+    const signature = material ? materialSignature(material) : "none";
+    if (!firstBySignature.has(signature)) {
+      firstBySignature.set(signature, index);
+    }
+    mesh.userData.colorKey = objectColorKey(index);
+    mesh.userData.materialKey = materialColorKey(
+      firstBySignature.get(signature) ?? index,
+    );
+  });
+}
+
 function addMergedMesh(
   group: Group,
   geometry: BufferGeometry,
   material: Material,
+  materialKey: string,
+  colorRanges: ColorRange[],
 ) {
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   const mesh = new Mesh(geometry, material);
+  mesh.userData.materialKey = materialKey;
+  mesh.userData.colorRanges = colorRanges;
   applyMeshShadows(mesh);
   mesh.matrixAutoUpdate = false;
   mesh.frustumCulled = true;
   group.add(mesh);
 }
 
+function singleRange(part: ChunkPart): ColorRange[] {
+  return [{ key: part.colorKey, start: 0, count: vertexCount(part.geometry) }];
+}
+
 function flushChunk(
   group: Group,
-  chunk: BufferGeometry[],
+  chunk: ChunkPart[],
   material: Material,
+  materialKey: string,
 ) {
   if (chunk.length === 0) return 0;
   if (chunk.length === 1) {
-    const geometry = chunk[0];
-    if (!geometry) return 0;
-    addMergedMesh(group, geometry, material);
+    const part = chunk[0];
+    if (!part) return 0;
+    addMergedMesh(group, part.geometry, material, materialKey, singleRange(part));
     return 1;
   }
 
-  alignAttributes(chunk);
+  const geometries = chunk.map((part) => part.geometry);
+  alignAttributes(geometries);
   let merged: BufferGeometry | null = null;
   try {
-    merged = mergeGeometries(chunk, false);
+    merged = mergeGeometries(geometries, false);
   } catch {
     merged = null;
   }
 
   if (merged) {
-    for (const geometry of chunk) geometry.dispose();
-    addMergedMesh(group, merged, material);
+    // mergeGeometries appends vertices in order, so each source mesh owns a
+    // contiguous vertex span in the merged buffer.
+    const ranges: ColorRange[] = [];
+    let start = 0;
+    for (const part of chunk) {
+      const count = vertexCount(part.geometry);
+      ranges.push({ key: part.colorKey, start, count });
+      start += count;
+    }
+    for (const geometry of geometries) geometry.dispose();
+    addMergedMesh(group, merged, material, materialKey, ranges);
     return 1;
   }
 
-  for (const geometry of chunk) {
-    addMergedMesh(group, geometry, material);
+  for (const part of chunk) {
+    addMergedMesh(group, part.geometry, material, materialKey, singleRange(part));
   }
   return chunk.length;
 }
@@ -175,6 +219,7 @@ export async function optimizeSceneForViewing(
   });
 
   const originalMeshCount = meshes.length;
+  tagSourceMeshes(meshes);
   if (skinned || originalMeshCount < 80) {
     const group = lightweightClone(source);
     prepareNormalMappedMaterials(group);
@@ -188,14 +233,21 @@ export async function optimizeSceneForViewing(
   }
 
   onProgress("Merging meshes…", 0);
-  const buckets = new Map<string, { material: Material; meshes: Mesh[] }>();
+  const buckets = new Map<
+    string,
+    { material: Material; materialKey: string; meshes: Mesh[] }
+  >();
   for (const mesh of meshes) {
     const material = getMaterials(mesh)[0];
     if (!material) continue;
     const key = materialSignature(material);
     let bucket = buckets.get(key);
     if (!bucket) {
-      bucket = { material: cloneMaterial(material), meshes: [] };
+      bucket = {
+        material: cloneMaterial(material),
+        materialKey: mesh.userData.materialKey as string,
+        meshes: [],
+      };
       buckets.set(key, bucket);
     }
     bucket.meshes.push(mesh);
@@ -208,7 +260,7 @@ export async function optimizeSceneForViewing(
   let processed = 0;
 
   for (const bucket of buckets.values()) {
-    let chunk: BufferGeometry[] = [];
+    let chunk: ChunkPart[] = [];
     let verts = 0;
 
     for (const mesh of bucket.meshes) {
@@ -216,11 +268,11 @@ export async function optimizeSceneForViewing(
       geometry.applyMatrix4(mesh.matrixWorld);
       const count = vertexCount(geometry);
       if (chunk.length > 0 && verts + count > MERGE_VERTEX_BUDGET) {
-        drawCalls += flushChunk(group, chunk, bucket.material);
+        drawCalls += flushChunk(group, chunk, bucket.material, bucket.materialKey);
         chunk = [];
         verts = 0;
       }
-      chunk.push(geometry);
+      chunk.push({ geometry, colorKey: mesh.userData.colorKey as string });
       verts += count;
       processed += 1;
       if (processed % 64 === 0) {
@@ -232,7 +284,7 @@ export async function optimizeSceneForViewing(
       }
     }
 
-    drawCalls += flushChunk(group, chunk, bucket.material);
+    drawCalls += flushChunk(group, chunk, bucket.material, bucket.materialKey);
   }
 
   const box = new Box3().setFromObject(group);
@@ -272,6 +324,15 @@ function lightweightClone(source: Object3D) {
   cloned.traverse((object) => {
     if (!isMesh(object)) return;
     applyMeshShadows(object);
+    if (typeof object.userData.colorKey === "string") {
+      object.userData.colorRanges = [
+        {
+          key: object.userData.colorKey,
+          start: 0,
+          count: vertexCount(object.geometry),
+        },
+      ] satisfies ColorRange[];
+    }
     object.matrixAutoUpdate = false;
     object.updateMatrix();
     object.material = Array.isArray(object.material)

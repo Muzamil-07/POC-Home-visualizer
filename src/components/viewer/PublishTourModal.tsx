@@ -4,6 +4,8 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { Check, Copy, ExternalLink, LoaderCircle, Share2 } from "lucide-react";
 import type { ModelSource, ModelStats } from "./glb";
 import {
+  selectCurrentColorOverrides,
+  selectCurrentConfigurables,
   selectCurrentViewpoints,
   selectStartViewpointId,
   useTourStore,
@@ -71,6 +73,8 @@ function PublishTourForm({
   const titleId = useId();
   const viewpoints = useTourStore(selectCurrentViewpoints);
   const startViewpointId = useTourStore(selectStartViewpointId);
+  const colorOverrides = useTourStore(selectCurrentColorOverrides);
+  const configurables = useTourStore(selectCurrentConfigurables);
   const modelId = useTourStore((state) => state.modelId);
   const record = usePublishStore((state) =>
     modelId ? state.recordsByModel[modelId] ?? null : null,
@@ -146,6 +150,8 @@ function PublishTourForm({
         startViewpointId: startViewpointId!,
         ground,
         aiVisualization: { enabled: aiVisualizationEnabled },
+        colorOverrides,
+        configurables,
       });
       const payload = {
         title: title.trim() || TITLE_DEFAULT,

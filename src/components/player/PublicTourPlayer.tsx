@@ -37,6 +37,13 @@ import { PointToMoveController } from "./PointToMoveController";
 import { ExplorationChrome } from "./ExplorationChrome";
 import { SceneCaptureBridge } from "./SceneCaptureBridge";
 import { AiVisualizationDrawer } from "./AiVisualizationDrawer";
+import {
+  ConfigurableHotspotLayer,
+  ConfigurableHotspotTracker,
+} from "./ConfigurableHotspots";
+import { ConfiguratorOverlay } from "./ConfiguratorOverlay";
+import { useConfiguratorStore } from "@/store/configurator-store";
+import { mergeConfiguratorChoices } from "@/lib/configurables";
 
 type PublicTourPlayerProps = {
   tour: PublishedTourRecord;
@@ -56,6 +63,22 @@ export function PublicTourPlayer({ tour }: PublicTourPlayerProps) {
   );
   const aiSettings = resolveAiVisualizationSettings(tour.tourData.aiVisualization);
   const [aiOpen, setAiOpen] = useState(() => getAiVisualization().open);
+  const configurables = tour.tourData.configurables;
+  const configuratorChoices = useConfiguratorStore((state) => state.choices);
+  const configuratorOpenId = useConfiguratorStore((state) => state.openId);
+  const colorOverrides = useMemo(
+    () =>
+      mergeConfiguratorChoices(
+        tour.tourData.model.colorOverrides,
+        configurables,
+        configuratorChoices,
+      ),
+    [configurables, configuratorChoices, tour.tourData.model.colorOverrides],
+  );
+
+  useEffect(() => {
+    useConfiguratorStore.getState().reset();
+  }, [tour.slug]);
 
   const source = useMemo<ModelSource>(
     () => ({
@@ -156,6 +179,7 @@ export function PublicTourPlayer({ tour }: PublicTourPlayerProps) {
           wireframe={false}
           doubleSided={false}
           lockedTransform={tour.tourData.model.transform}
+          colorOverrides={colorOverrides}
           autoFrame={false}
           onReady={setModelStats}
           onError={() =>
@@ -182,6 +206,9 @@ export function PublicTourPlayer({ tour }: PublicTourPlayerProps) {
             modelSize={modelSize}
             modelReady
           />
+        ) : null}
+        {modelStats && configurables?.length ? (
+          <ConfigurableHotspotTracker items={configurables} />
         ) : null}
         <SceneCaptureBridge />
       </Canvas>
@@ -243,6 +270,21 @@ export function PublicTourPlayer({ tour }: PublicTourPlayerProps) {
           </div>
         </div>
       )}
+
+      {modelStats && configurables?.length ? (
+        <>
+          <ConfigurableHotspotLayer
+            items={configurables}
+            activeId={configuratorOpenId}
+            onSelect={(id) =>
+              useConfiguratorStore
+                .getState()
+                .open(configuratorOpenId === id ? null : id)
+            }
+          />
+          <ConfiguratorOverlay items={configurables} />
+        </>
+      ) : null}
 
       {aiSettings.enabled ? <AiVisualizationDrawer tourSlug={tour.slug} /> : null}
     </div>
